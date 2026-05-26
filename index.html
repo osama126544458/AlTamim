@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آل تميم - طلب أوردر</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; text-align: right; }
+        .container { max-width: 500px; background: #fff; margin: 0 auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        .offer-banner { background: #ffc107; color: #000; padding: 10px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 15px; display: none; }
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #218838; }
+        .btn-location { background-color: #007bff; }
+        .btn-location:hover { background-color: #0069d9; }
+        .status-box { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 4px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="offer_banner" class="offer-banner"></div>
+    <h2>طلب أوردر - آل تميم</h2>
+    
+    <label>اسم العميل:</label>
+    <input type="text" id="name_input" placeholder="اكتب اسمك بالكامل">
+
+    <label>رقم الهاتف:</label>
+    <input type="tel" id="phone_input" placeholder="اكتب رقم تليفونك">
+
+    <label>تفاصيل الطلب (الأوردر):</label>
+    <textarea id="order_input" rows="4" placeholder="اكتب تفاصيل طلبك هنا..."></textarea>
+
+    <label>العنوان بالتفصيل:</label>
+    <input type="text" id="address_input" placeholder="المحافظة - المدينة - اسم الشارع/العلامة">
+
+    <button type="button" class="btn-location" onclick="getLocation()">📌 مشاركة موقعك (اللوكيشن لايف)</button>
+    <input type="text" id="location_url" placeholder="رابط الموقع سيظهر هنا تلقائياً" readonly>
+
+    <button type="button" id="send_btn" onclick="sendOrder()">🚀 إرسال الطلب للأدمن</button>
+
+    <div id="status_div" class="status-box" style="display:none;">
+        حالة الأوردر الحالية: <span id="order_status" style="color: #ffc107;">في انتظار التأكيد...</span>
+        <br>
+        <button id="cancel_btn" style="background-color:#dc3545; display:none;" onclick="cancelOrder()">❌ إلغاء الأوردر</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAHAsreuDDEGRzYgWkWMcQKe4cGXpZy5Ok",
+        authDomain: "gharbiamarket-a0611.firebaseapp.com",
+        databaseURL: "https://gharbiamarket-a0611-default-rtdb.firebaseio.com/",
+        projectId: "gharbiamarket-a0611",
+        storageBucket: "gharbiamarket-a0611.firebasestorage.app",
+        messagingSenderId: "854735817284",
+        appId: "1:854735817284:web:000556e15b11ab55574a11",
+        measurementId: "G-565L7G1PYH"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    let currentOrderKey = null;
+    let userLocationUrl = "";
+
+    database.ref('AlTamim_Offers/current').on('value', (snapshot) => {
+        const offer = snapshot.val();
+        const banner = document.getElementById('offer_banner');
+        if(offer && offer.text) {
+            banner.innerText = "🔥 عرض جديد: " + offer.text;
+            banner.style.display = "block";
+        } else {
+            banner.style.display = "none";
+        }
+    });
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                userLocationUrl = "https://maps.google.com/?q=" + position.coords.latitude + "," + position.coords.longitude;
+                document.getElementById('location_url').value = userLocationUrl;
+                alert("تم تحديد موقعك بنجاح!");
+            }, function(error) {
+                alert("برجاء تفعيل الـ GPS في الموبايل للسماح بمشاركة الموقع.");
+            });
+        } else {
+            alert("المتصفح لا يدعم تحديد الموقع.");
+        }
+    }
+
+    function sendOrder() {
+        const name = document.getElementById('name_input').value;
+        const phone = document.getElementById('phone_input').value;
+        const orderDetails = document.getElementById('order_input').value;
+        const address = document.getElementById('address_input').value;
+
+        if(!name || !phone || !orderDetails || !address) {
+            alert("برجاء ملء جميع الخانات المطلوبة!");
+            return;
+        }
+
+        const orderRef = database.ref('AlTamim_Orders').push();
+        currentOrderKey = orderRef.key;
+
+        const orderData = {
+            order_id: currentOrderKey,
+            client_name: name,
+            client_phone: phone,
+            order_details: orderDetails,
+            detailed_address: address,
+            location_link: userLocationUrl,
+            status: "pending",
+            timestamp: Date.now()
+        };
+
+        orderRef.set(orderData).then(() => {
+            alert("تم إرسال أوردرك بنجاح!");
+            document.getElementById('send_btn').disabled = true;
+            document.getElementById('status_div').style.display = "block";
+            document.getElementById('cancel_btn').style.display = "block";
+            listenToOrderStatus();
+        });
+    }
+
+    function listenToOrderStatus() {
+        database.ref('AlTamim_Orders/' + currentOrderKey).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                document.getElementById('order_status').innerText = data.status === "pending" ? "في انتظار التأكيد..." : "تم تأكيد طلبك وجاري التوصيل! ✅";
+                if(data.status !== "pending") {
+                    document.getElementById('cancel_btn').style.display = "none";
+                    document.getElementById('order_status').style.color = "#28a745";
+                }
+            } else {
+                document.getElementById('order_status').innerText = "تم إلغاء الأوردر أو حذفه.";
+                document.getElementById('cancel_btn').style.display = "none";
+                document.getElementById('order_status').style.color = "#dc3545";
+            }
+        });
+    }
+
+    function cancelOrder() {
+        if(confirm("هل أنت متأكد من إلغاء هذا الأوردر؟")) {
+            database.ref('AlTamim_Orders/' + currentOrderKey).remove().then(() => {
+                alert("تم إلغاء الأوردر بنجاح.");
+                location.reload();
+            });
+        }
+    }
+</script>
+</body>
+</html>
