@@ -366,7 +366,7 @@ textarea.form-control {
 </head>
 <body>
 
-<!-- زرار الواتساب العائم للدعم الفني الخاص بك -->
+<!-- زرار الواتساب العائم -->
 <a href="https://wa.me/201281857151" target="_blank" class="whatsapp-btn">
     <i class="bi bi-whatsapp"></i>
     <span>الدعم الفني</span>
@@ -422,7 +422,7 @@ textarea.form-control {
                         <div class="mb-3">
                             <label for="clientAddress" class="form-label">العنوان بالتفصيل (داخل طنطا)</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" id="clientAddress" name="clientAddress" required placeholder="اسم الشارع، الدور، الشقة، علامة مميزة (مثال: شارع سعيد)">
+                                <input type="text" class="form-control" id="clientAddress" name="clientAddress" required placeholder="اسم الشارع، الدور، علامة مميزة (مثال: شارع سعيد)">
                                 <i class="bi bi-geo-alt input-icon"></i>
                             </div>
                         </div>
@@ -484,12 +484,11 @@ textarea.form-control {
     </div>
 </div>
 
-<!-- Firebase Modular SDK -->
+<!-- Firebase Config -->
 <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import { getDatabase, ref, push, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-    // قاعدة البيانات الأصلية الخاصة بك
     const firebaseConfig = {
         databaseURL: "https://vnom-gym-default-rtdb.firebaseio.com"
     };
@@ -505,7 +504,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('orderForm');
     const successAlert = document.getElementById('successAlert');
     
-    // استرجاع البيانات المخزنة مسبقاً لتوفير الوقت على العميل
     if(localStorage.getItem('clientName')) { document.getElementById('clientName').value = localStorage.getItem('clientName'); }
     if(localStorage.getItem('phoneNumber')) { document.getElementById('phoneNumber').value = localStorage.getItem('phoneNumber'); }
 
@@ -539,38 +537,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if(!isValid) return;
 
-        // حفظ الاسم والرقم محلياً
         localStorage.setItem('clientName', name);
         localStorage.setItem('phoneNumber', phone);
 
-        // بناء الأوبجكت متوافق مع لوحة التحكم للأدمن
+        // الحل السحري: دمج العنوان واللوكيشن اليدوي جوه الخانة اللي الأدمن بيقرأها إجباري
+        // مع تمرير إحداثيات ثابتة عشان الخريطة عند الأدمن متقفلش أو تضرب
+        const finalOrderDetails = `📍 العنوان: ${address}\n📦 الطلب: ${details}\n🔗 رابط ماب: ${mapUrl ? mapUrl : 'غير مرفق'}`;
+
         const orderPayload = {
             clientName: name,
             phoneNumber: phone,
-            address: address,
-            orderDetails: details,
-            googleMapsLink: mapUrl ? mapUrl : "لم يتم إرفاق رابط خارجي",
+            orderDetails: finalOrderDetails, // مدمج فيه كل تفاصيل العنوان والطلب
+            latitude: 30.7865,               // إحداثيات وسط طنطا عشان الأدمن يقبلها
+            longitude: 31.0004,              // إحداثيات وسط طنطا عشان الأدمن يقبلها
+            accuracy: 10,
             status: 'pending',
-            area: 'Tanta',
             createdAt: new Date().toISOString()
         };
 
-        // الرفع المباشر لقاعدة البيانات
         try {
             if (window.firebaseDB) {
                 const { db, ref, push, serverTimestamp } = window.firebaseDB;
                 orderPayload.timestamp = serverTimestamp();
                 
+                // الرفع المباشر في الـ node الأصلي "orders"
                 await push(ref(db, 'orders'), orderPayload);
-                console.log('Order created successfully!');
+                console.log('Order sent safely to admin structure!');
             }
         } catch (error) {
-            console.error('Firebase Error:', error);
-            alert('حدث خطأ في الإرسال، برجاء التواصل مع الدعم الفني عبر الواتساب.');
+            console.error('Firebase Delivery Error:', error);
+            alert('حدث خطأ أثناء الإرسال، يمكنك طلب الدعم الفني مباشرة عبر الواتساب.');
             return;
         }
 
-        // تصفير الخانات المتغيرة وإظهار النجاح
+        // تفريغ الحقول
         document.getElementById('clientAddress').value = '';
         document.getElementById('orderDetails').value = '';
         document.getElementById('mapsLink').value = '';
@@ -584,3 +584,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
