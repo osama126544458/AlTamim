@@ -2,47 +2,313 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة التحكم</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الأدمن الشاملة - آل تميم</title>
+    
+    <!-- سكريبتات الفيربيز الرسمية لمشروعك -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- Bootstrap 5.3 RTL & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root { --gold: #C9A961; --dark-bg: #0b0f19; --card-bg: rgba(20, 27, 45, 0.8); }
+        * { font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--dark-bg); color: #f8f9fa; min-height: 100vh; padding-bottom: 3rem; }
+        
+        /* القائمة العلوية والتنقل */
+        .nav-pills .nav-link { color: #fff; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); margin: 5px; border-radius: 10px; font-weight: bold; transition: 0.3s; }
+        .nav-pills .nav-link.active { background: linear-gradient(135deg, var(--gold) 0%, #E4D3A3 100%); color: #0b0f19; border-color: transparent; }
+        
+        .admin-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+        .order-details-box { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 15px; white-space: pre-line; color: #e4d3a3; font-size: 0.95rem; }
+        .form-control { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #fff; padding: 0.75rem; }
+        .form-control:focus { background: #0f1626; border-color: var(--gold); color: #fff; box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.25); }
+        
+        .header-title { color: #fff; font-weight: 900; border-bottom: 3px solid var(--gold); padding-bottom: 10px; display: inline-block; }
+        .top-client-row { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    </style>
 </head>
-<body style="background:#1a1a1a; color:white; padding:20px;">
-<div class="container">
-    <h3>طلبات العملاء</h3>
-    <div id="orders_list"></div>
+<body>
+
+<!-- الهيدر العلوي -->
+<div class="container text-center my-4">
+    <h2 class="header-title"><i class="bi bi-shield-lock me-2"></i>منظومة إدارة آل تميم</h2>
+    <p class="text-muted small">تحكم كامل في الإعلانات، الأوردرات، والعملاء</p>
+</div>
+
+<!-- قائمة التنقل بين الصفحات (Tabs) -->
+<div class="container mb-4">
+    <ul class="nav nav-pills nav-fill justify-content-center" id="adminTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active" id="offers-tab" data-bs-toggle="tab" data-bs-target="#offers_page" type="button"><i class="bi bi-megaphone me-1"></i> الإعلانات والعروض</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="new-orders-tab" data-bs-toggle="tab" data-bs-target="#new_orders_page" type="button"><i class="bi bi-box-seam me-1"></i> طلبات جديدة <span class="badge bg-danger rounded-pill" id="new_count">0</span></button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="confirmed-orders-tab" data-bs-toggle="tab" data-bs-target="#confirmed_orders_page" type="button"><i class="bi bi-truck me-1"></i> طلبات مؤكدة <span class="badge bg-warning text-dark rounded-pill" id="confirmed_count">0</span></button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="delivered-orders-tab" data-bs-toggle="tab" data-bs-target="#delivered_orders_page" type="button"><i class="bi bi-check2-all me-1"></i> تم التوصيل</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" id="clients-tab" data-bs-toggle="tab" data-bs-target="#clients_page" type="button"><i class="bi bi-people me-1"></i> أبرز العملاء</button>
+        </li>
+    </ul>
+</div>
+
+<!-- محتوى الصفحات -->
+<div class="container tab-content" id="adminTabsContent">
+
+    <!-- 1. صفحة الإعلانات والعروض -->
+    <div class="tab-pane fade show active" id="offers_page" role="tabpanel">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="admin-card">
+                    <h5 class="fw-bold mb-3 text-white"><i class="bi bi-plus-circle me-1 text-warning"></i> نشر إعلان أو عرض جديد للزبائن</h5>
+                    <div class="mb-3">
+                        <label class="form-label">نص العرض أو الإعلان:</label>
+                        <textarea class="form-control" id="offer_text" rows="3" placeholder="اكتب تفاصيل العرض (مثال: خصم 20% على التوصيل اليوم للبلد!)"></textarea>
+                    </div>
+                    <button class="btn btn-warning w-100 fw-bold mb-3" onclick="publishOffer()">📢 نشر الإعلان فوراً</button>
+                    <hr class="border-secondary">
+                    <button class="btn btn-outline-danger btn-sm w-100" onclick="deleteOffer()">❌ حذف الإعلان الحالي من تطبيق العميل</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. صفحة الطلبات الجديدة (قيد الانتظار) -->
+    <div class="tab-pane fade" id="new_orders_page" role="tabpanel">
+        <div class="row" id="new_orders_container">
+            <!-- الطلبات الجديدة بتنزل هنا -->
+        </div>
+    </div>
+
+    <!-- 3. صفحة الطلبات المؤكدة (جاري التوصيل) -->
+    <div class="tab-pane fade" id="confirmed_orders_page" role="tabpanel">
+        <div class="row" id="confirmed_orders_container">
+            <!-- الطلبات المؤكدة بتنزل هنا -->
+        </div>
+    </div>
+
+    <!-- 4. صفحة الطلبات المتوصلة (الأرشيف المنتهي) -->
+    <div class="tab-pane fade" id="delivered_orders_page" role="tabpanel">
+        <div class="row" id="delivered_orders_container">
+            <!-- الطلبات الموصلة بتنزل هنا -->
+        </div>
+    </div>
+
+    <!-- 5. صفحة أبرز العملاء -->
+    <div class="tab-pane fade" id="clients_page" role="tabpanel">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="admin-card">
+                    <h5 class="fw-bold mb-4 text-white"><i class="bi bi-trophy me-2 text-warning"></i> قائمة العملاء الأكثر طلباً للتوصيل</h5>
+                    <div id="clients_container">
+                        <!-- قائمة ترتيب العملاء هنا -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    // [خطوة مهمة: ضع نفس بيانات مشروعك هنا بالظبط]
+    // إعدادات مشروعك الثابتة والمشغلة (آل تميم)
     const firebaseConfig = {
-        apiKey: "AIza...",
-        authDomain: "...",
-        databaseURL: "...",
-        projectId: "...",
-        storageBucket: "...",
-        messagingSenderId: "...",
-        appId: "..."
+        apiKey: "AIzaSyCqgpR6RkmGDMKeLZcYpJP43-8W_NePTBg",
+        authDomain: "altamim-project.firebaseapp.com",
+        databaseURL: "https://altamim-project-default-rtdb.firebaseio.com",
+        projectId: "altamim-project",
+        storageBucket: "altamim-project.firebasestorage.app",
+        messagingSenderId: "24194456334",
+        appId: "1:24194456334:web:9ea26ffb015b625912555f",
+        measurementId: "G-T2XWZ3757B"
     };
+    
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const database = firebase.database();
 
-    db.ref('Orders').on('value', snap => {
-        const orders = snap.val();
-        let html = "";
-        for(let id in orders) {
-            let o = orders[id];
-            html += `<div class="card bg-dark text-white p-3 mb-2">
-                <b>${o.name}</b><p>${o.details}</p>
-                <p>الحالة: ${o.status}</p>
-                ${o.status === 'pending' ? `<button class="btn btn-success" onclick="update('${id}','confirmed')">تأكيد الطلب</button>` : ''}
-                ${o.status === 'confirmed' ? `<button class="btn btn-primary" onclick="update('${id}','delivered')">تم التوصيل</button>` : ''}
-            </div>`;
+    // =============== [ 1. كود إدارة الإعلانات ] ===============
+    function publishOffer() {
+        const text = document.getElementById('offer_text').value.trim();
+        if(!text) { alert("برجاء كتابة نص العرض أولاً!"); return; }
+        
+        database.ref('AlTamim_Offers/current').set({ text: text })
+        .then(() => { alert("تم نشر العرض بنجاح وظهر عند العملاء! 🔥"); document.getElementById('offer_text').value = ""; })
+        .catch(err => alert("خطأ في النشر: " + err));
+    }
+
+    function deleteOffer() {
+        if(confirm("هل أنت متأكد من حذف الإعلان الحالي؟")) {
+            database.ref('AlTamim_Offers/current').remove()
+            .then(() => alert("تم حذف الإعلان بنجاح."));
         }
-        document.getElementById('orders_list').innerHTML = html;
+    }
+
+    // =============== [ 2. كود السحب والفرز الحي للأوردرات ] ===============
+    database.ref('AlTamim_Orders').on('value', (snapshot) => {
+        const allOrders = snapshot.val();
+        
+        // مسح محتوى الحاويات القديم
+        const newContainer = document.getElementById('new_orders_container');
+        const confirmedContainer = document.getElementById('confirmed_orders_container');
+        const deliveredContainer = document.getElementById('delivered_orders_container');
+        
+        newContainer.innerHTML = "";
+        confirmedContainer.innerHTML = "";
+        deliveredContainer.innerHTML = "";
+
+        if(!allOrders) {
+            const noMsg = `<div class='col-12 text-center text-muted py-4'><h5>لا توجد بيانات حالياً</h5></div>`;
+            newContainer.innerHTML = noMsg; confirmedContainer.innerHTML = noMsg; deliveredContainer.innerHTML = noMsg;
+            updateBadges(0, 0);
+            return;
+        }
+
+        // عدادات الشارات العلوية
+        let countNew = 0; let countConfirmed = 0;
+        
+        // لتخزين بيانات حساب أبرز العملاء
+        let clientStats = {};
+
+        // تحويل البيانات لترتيبها من الأحدث للأقدم
+        const sorted = Object.keys(allOrders).map(key => ({ id: key, ...allOrders[key] }))
+                             .sort((a,b) => b.timestamp - a.timestamp);
+
+        sorted.forEach(order => {
+            // صياغة الوقت
+            const timeStr = new Date(order.timestamp).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}) + " | " + new Date(order.timestamp).toLocaleDateString('ar-EG', {day:'numeric', month:'short'});
+            
+            // إنشاء كارت الأوردر المتكامل
+            const card = document.createElement('div');
+            card.className = "col-md-6 col-lg-4";
+            card.innerHTML = `
+                <div class="admin-card">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted"><i class="bi bi-clock me-1"></i>${timeStr}</small>
+                        <span class="badge ${order.status==='pending'?'bg-danger':order.status==='confirmed'?'bg-warning text-dark':'bg-success'} rounded-pill">${order.status==='pending'?'جديد':order.status==='confirmed'?'مؤكد':'تم التوصيل'}</span>
+                    </div>
+                    <h5 class="fw-bold text-white mb-1"><i class="bi bi-person me-1 text-warning"></i>${order.client_name}</h5>
+                    <p class="mb-3"><i class="bi bi-telephone me-1 text-success"></i><a href="tel:${order.client_phone}" class="text-success text-decoration-none fw-bold">${order.client_phone}</a></p>
+                    
+                    <div class="mb-2">
+                        <label class="text-muted small fw-bold mb-1">📋 تفاصيل الأصناف المكتوبة:</label>
+                        <div class="order-details-box">${order.order_details}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="text-muted small fw-bold mb-1">📍 العنوان بالتفصيل:</label>
+                        <p class="text-white-50 bg-dark p-2 rounded small border border-secondary mb-0">${order.detailed_address}</p>
+                    </div>
+                    <div class="actions-area pt-2 border-top border-secondary">
+                        ${getButtonsByStatus(order.id, order.status)}
+                    </div>
+                </div>
+            `;
+
+            // توجيه الكارت لصفحته المناسبة حسب حالته الفعالة
+            if(order.status === 'pending') {
+                newContainer.appendChild(card); countNew++;
+                // تجميع بيانات العميل لو الأوردر مش ملغي
+                buildClientStats(clientStats, order.client_name, order.client_phone);
+            } else if(order.status === 'confirmed') {
+                confirmedContainer.appendChild(card); countConfirmed++;
+                buildClientStats(clientStats, order.client_name, order.client_phone);
+            } else if(order.status === 'delivered') {
+                deliveredContainer.appendChild(card);
+                buildClientStats(clientStats, order.client_name, order.client_phone);
+            }
+        });
+
+        // تحديث العدادات فوق الأزرار
+        updateBadges(countNew, countConfirmed);
+        // عرض قائمة أبرز العملاء
+        renderTopClients(clientStats);
     });
 
-    function update(id, status) { db.ref('Orders/'+id).update({status: status}); }
+    // دالة لتوليد الأزرار المناسبة لكل صفحة أوتوماتيكياً
+    function getButtonsByStatus(id, status) {
+        if(status === 'pending') {
+            return `<button class="btn btn-success btn-sm w-100 fw-bold mb-2" onclick="changeStatus('${id}', 'confirmed')"><i class="bi bi-check-lg me-1"></i>تأكيد ونقل للمؤكدة</button>
+                    <button class="btn btn-outline-danger btn-sm w-100 font-size-0.8" onclick="deleteOrder('${id}')">حذف</button>`;
+        } else if(status === 'confirmed') {
+            return `<button class="btn btn-warning btn-sm w-100 text-dark fw-bold mb-2" onclick="changeStatus('${id}', 'delivered')"><i class="bi bi-truck me-1"></i>تم التوصيل بنجاح ✅</button>
+                    <button class="btn btn-outline-secondary btn-sm w-100" onclick="changeStatus('${id}', 'pending')">إرجاع للجديدة</button>`;
+        } else {
+            return `<div class="text-center text-success small fw-bold py-1"><i class="bi bi-shield-check me-1"></i>هذا الأوردر تم تسليمه وإغلاقه</div>
+                    <button class="btn btn-outline-danger btn-sm w-100 mt-2" onclick="deleteOrder('${id}')">مسح من الأرشيف</button>`;
+        }
+    }
+
+    // تعديل حالة الطلب في السيرفر الفيربيز
+    function changeStatus(id, nextStatus) {
+        database.ref('AlTamim_Orders/' + id).update({ status: nextStatus });
+    }
+
+    // مسح أوردر نهائياً
+    function deleteOrder(id) {
+        if(confirm("هل تريد حذف هذا الأوردر من السيستم تماماً؟")) {
+            database.ref('AlTamim_Orders/' + id).remove();
+        }
+    }
+
+    // تحديث أرقام التنبيهات الحمراء والصفراء العلوية
+    function updateBadges(n, c) {
+        document.getElementById('new_count').innerText = n;
+        document.getElementById('confirmed_count').innerText = c;
+    }
+
+    // =============== [ 3. كود حساب وعرض أبرز العملاء ] ===============
+    function buildClientStats(statsObj, name, phone) {
+        const uniqueKey = name.trim() + "_" + phone.trim();
+        if(!statsObj[uniqueKey]) {
+            statsObj[uniqueKey] = { name: name, phone: phone, totalOrders: 0 };
+        }
+        statsObj[uniqueKey].totalOrders++;
+    }
+
+    function renderTopClients(statsObj) {
+        const container = document.getElementById('clients_container');
+        container.innerHTML = "";
+
+        // تحويل الأوبجكت لمصفوفة وفرز العملاء من الأكثر طلباً للأقل
+        const sortedClients = Object.keys(statsObj).map(k => statsObj[k])
+                                    .sort((a,b) => b.totalOrders - a.totalOrders);
+
+        if(sortedClients.length === 0) {
+            container.innerHTML = "<p class='text-muted text-center'>لا يوجد عملاء مسجلين حالياً.</p>";
+            return;
+        }
+
+        sortedClients.forEach((client, index) => {
+            let medal = "";
+            if(index === 0) medal = "🥇 ";
+            else if(index === 1) medal = "🥈 ";
+            else if(index === 2) medal = "🥉 ";
+
+            const div = document.createElement('div');
+            div.className = "top-client-row";
+            div.innerHTML = `
+                <div>
+                    <span class="fw-bold text-white">${medal}${client.name}</span>
+                    <br><small class="text-muted"><i class="bi bi-telephone small me-1"></i>${client.phone}</small>
+                </div>
+                <div>
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold">${client.totalOrders} أوردرات</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
 </script>
+
+<!-- سكريبت تشغيل ميزات حركة التنقل من البوتستراب -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
