@@ -2,49 +2,47 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>لوحة تحكم الأدمن</title>
+    <title>لوحة التحكم</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
 </head>
 <body style="background:#1a1a1a; color:white; padding:20px;">
-
 <div class="container">
-    <h3>طلبات جديدة</h3>
-    <div id="admin_orders" class="row"></div>
+    <h3>طلبات العملاء</h3>
+    <div id="orders_list"></div>
 </div>
 
 <script>
-    // --- انسخ نفس الـ firebaseConfig اللي فوق بالظبط هنا ---
-    const firebaseConfig = { /* نفس الكود اللي فوق */ };
+    // [خطوة مهمة: ضع نفس بيانات مشروعك هنا بالظبط]
+    const firebaseConfig = {
+        apiKey: "AIza...",
+        authDomain: "...",
+        databaseURL: "...",
+        projectId: "...",
+        storageBucket: "...",
+        messagingSenderId: "...",
+        appId: "..."
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    db.ref('AlTamim_Orders').on('value', snap => {
+    db.ref('Orders').on('value', snap => {
         const orders = snap.val();
-        const container = document.getElementById('admin_orders');
-        container.innerHTML = "";
-        
+        let html = "";
         for(let id in orders) {
-            if(orders[id].status === "pending") {
-                container.innerHTML += `
-                    <div class="card bg-dark text-white p-3 mb-2">
-                        <p>${orders[id].client_name} - ${orders[id].order_details}</p>
-                        <button class="btn btn-success" onclick="updateStatus('${id}', 'confirmed')">تأكيد</button>
-                    </div>`;
-            } else if(orders[id].status === "confirmed") {
-                container.innerHTML += `
-                    <div class="card bg-warning text-black p-3 mb-2">
-                        <p>مؤكد: ${orders[id].client_name}</p>
-                        <button class="btn btn-primary" onclick="updateStatus('${id}', 'delivered')">تم التوصيل (للسجل)</button>
-                    </div>`;
-            }
+            let o = orders[id];
+            html += `<div class="card bg-dark text-white p-3 mb-2">
+                <b>${o.name}</b><p>${o.details}</p>
+                <p>الحالة: ${o.status}</p>
+                ${o.status === 'pending' ? `<button class="btn btn-success" onclick="update('${id}','confirmed')">تأكيد الطلب</button>` : ''}
+                ${o.status === 'confirmed' ? `<button class="btn btn-primary" onclick="update('${id}','delivered')">تم التوصيل</button>` : ''}
+            </div>`;
         }
+        document.getElementById('orders_list').innerHTML = html;
     });
 
-    function updateStatus(id, newStatus) {
-        db.ref('AlTamim_Orders/' + id).update({ status: newStatus });
-    }
+    function update(id, status) { db.ref('Orders/'+id).update({status: status}); }
 </script>
 </body>
 </html>
