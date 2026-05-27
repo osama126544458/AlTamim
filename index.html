@@ -3,184 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق التميم - طلب جديد</title>
-    <!-- استدعاء خط فريدم وشبكة بوتست랩 للتصميم الاحترافي -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <title>آل تميم - طلب أوردر</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .card-order {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #0d6efd, #0046b5);
-            border: none;
-            border-radius: 8px;
-            padding: 12px;
-        }
-        .btn-success {
-            background: linear-gradient(135deg, #198754, #115f3a);
-            border: none;
-            border-radius: 8px;
-            padding: 12px;
-        }
-        .form-control {
-            border-radius: 8px;
-            padding: 12px;
-            border: 1px solid #ced4da;
-        }
-        .form-control:focus {
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-        }
-        .location-status {
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; text-align: right; }
+        .container { max-width: 500px; background: #fff; margin: 0 auto; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        .offer-banner { background: #ffc107; color: #000; padding: 10px; text-align: center; font-weight: bold; border-radius: 4px; margin-bottom: 15px; display: none; }
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #218838; }
+        .btn-location { background-color: #007bff; }
+        .btn-location:hover { background-color: #0069d9; }
+        .status-box { margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 4px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container py-4">
-    <!-- الهيدر أو شعار التطبيق -->
-    <div class="text-center mb-4">
-        <h2 class="fw-bold text-primary">التميم للخدمات</h2>
-        <p class="text-muted">سجل بياناتك واطلب بكل سهولة</p>
-    </div>
+<div class="container">
+    <div id="offer_banner" class="offer-banner"></div>
+    <h2>طلب أوردر - آل تميم</h2>
+    
+    <label>اسم العميل:</label>
+    <input type="text" id="name_input" placeholder="اكتب اسمك بالكامل">
 
-    <!-- كارت تسجيل الطلب -->
-    <div class="card card-order p-4 mb-4">
-        <h4 class="mb-3 fw-bold text-dark"><i class="bi bi-cart3 me-2"></i>تفاصيل الطلب</h4>
-        
-        <form id="orderForm">
-            <!-- اسم العميل -->
-            <div class="mb-3">
-                <label for="clientName" class="form-label fw-semibold">اسم العميل :</label>
-                <input type="text" class="form-control" id="clientName" placeholder="اكتب اسمك الثلاثي" required>
-            </div>
+    <label>رقم الهاتف:</label>
+    <input type="tel" id="phone_input" placeholder="اكتب رقم تليفونك">
 
-            <!-- رقم الهاتف -->
-            <div class="mb-3">
-                <label for="clientPhone" class="form-label fw-semibold">رقم الهاتف :</label>
-                <input type="tel" class="form-control" id="clientPhone" placeholder="رقم الموبايل للتواصل" required>
-            </div>
+    <label>تفاصيل الطلب (الأوردر):</label>
+    <textarea id="order_input" rows="4" placeholder="اكتب تفاصيل طلبك هنا..."></textarea>
 
-            <!-- تفاصيل الطلبات -->
-            <div class="mb-3">
-                <label for="orderDetails" class="form-label fw-semibold">ما هي طلباتك؟</label>
-                <textarea class="form-control" id="orderDetails" rows="4" placeholder="اكتب المنتجات أو الخدمات التي تحتاجها بالتفصيل..." required></textarea>
-            </div>
+    <label>العنوان بالتفصيل:</label>
+    <input type="text" id="address_input" placeholder="المحافظة - المدينة - اسم الشارع/العلامة">
 
-            <!-- تحديد الموقع الجغرافي (اللايف لوكيشن) -->
-            <div class="mb-4">
-                <label class="form-label fw-semibold">تحديد موقع التوصيل :</label>
-                <button type="button" class="btn btn-outline-secondary w-100" id="getLocationBtn">
-                    <i class="bi bi-geo-alt-fill me-2"></i>اضغط لتحديد موقعك الحالي تلقائياً
-                </button>
-                <div id="locationStatus" class="location-status text-muted text-center mt-2">الموقع لم يحدد بعد</div>
-                
-                <!-- حقول مخفية لحفظ الإحداثيات وإرسالها لقاعدة البيانات -->
-                <input type="hidden" id="latitude">
-                <input type="hidden" id="longitude">
-            </div>
+    <button type="button" class="btn-location" onclick="getLocation()">📌 مشاركة موقعك (اللوكيشن لايف)</button>
+    <input type="text" id="location_url" placeholder="رابط الموقع سيظهر هنا تلقائياً" readonly>
 
-            <!-- زر إرسال الطلب -->
-            <button type="submit" class="btn btn-success w-100 fw-bold fs-5">
-                <i class="bi bi-check-circle me-2"></i>إرسال الطلب الآن
-            </button>
-        </form>
+    <button type="button" id="send_btn" onclick="sendOrder()">🚀 إرسال الطلب للأدمن</button>
+
+    <div id="status_div" class="status-box" style="display:none;">
+        حالة الأوردر الحالية: <span id="order_status" style="color: #ffc107;">في انتظار التأكيد...</span>
+        <br>
+        <button id="cancel_btn" style="background-color:#dc3545; display:none;" onclick="cancelOrder()">❌ إلغاء الأوردر</button>
     </div>
 </div>
 
-<!-- كود الجافا سكريبت لتشغيل اللوكيشن وإرسال البيانات -->
 <script>
-    // 1. كود تحديد الموقع الجغرافي (Live Location)
-    document.getElementById('getLocationBtn').addEventListener('click', function() {
-        const statusText = document.getElementById('locationStatus');
-        const latInput = document.getElementById('latitude');
-        const lngInput = document.getElementById('longitude');
+    // كود الربط الجديد الخاص بمشروع التميم
+    const firebaseConfig = {
+        apiKey: "AIzaSyCqgpR6RkmGDMKeLZcYpJP43-8W_NePTBg",
+        authDomain: "altamim-project.firebaseapp.com",
+        databaseURL: "https://altamim-project-default-rtdb.firebaseio.com",
+        projectId: "altamim-project",
+        storageBucket: "altamim-project.firebasestorage.app",
+        messagingSenderId: "24194456334",
+        appId: "1:24194456334:web:9ea26ffb015b625912555f",
+        measurementId: "G-T2XWZ3757B"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-        if (!navigator.geolocation) {
-            statusText.innerText = "❌ متصفحك لا يدعم تحديد الموقع الجغرافي.";
-            statusText.className = "location-status text-danger text-center";
+    let currentOrderKey = null;
+    let userLocationUrl = "";
+
+    database.ref('AlTamim_Offers/current').on('value', (snapshot) => {
+        const offer = snapshot.val();
+        const banner = document.getElementById('offer_banner');
+        if(offer && offer.text) {
+            banner.innerText = "🔥 عرض جديد: " + offer.text;
+            banner.style.display = "block";
+        } else {
+            banner.style.display = "none";
+        }
+    });
+
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                userLocationUrl = "https://maps.google.com/?q=" + position.coords.latitude + "," + position.coords.longitude;
+                document.getElementById('location_url').value = userLocationUrl;
+                alert("تم تحديد موقعك بنجاح!");
+            }, function(error) {
+                alert("برجاء تفعيل الـ GPS في الموبايل للسماح بمشاركة الموقع.");
+            });
+        } else {
+            alert("المتصفح لا يدعم تحديد الموقع.");
+        }
+    }
+
+    function sendOrder() {
+        const name = document.getElementById('name_input').value;
+        const phone = document.getElementById('phone_input').value;
+        const orderDetails = document.getElementById('order_input').value;
+        const address = document.getElementById('address_input').value;
+
+        if(!name || !phone || !orderDetails || !address) {
+            alert("برجاء ملء جميع الخانات المطلوبة!");
             return;
         }
 
-        statusText.innerText = "⏳ جاري تحديد موقعك بدقة، انتظر ثواني...";
-        statusText.className = "location-status text-warning text-center";
+        const orderRef = database.ref('AlTamim_Orders').push();
+        currentOrderKey = orderRef.key;
 
-        // خيارات لجلب الموقع بأعلى دقة ممكنة High Accuracy
-        const options = {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        };
-
-        navigator.geolocation.getCurrentPosition(
-            // حالة النجاح
-            function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                
-                latInput.value = lat;
-                lngInput.value = lng;
-
-                statusText.innerText = `✅ تم تحديد الموقع بنجاح! (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-                statusText.className = "location-status text-success text-center";
-                document.getElementById('getLocationBtn').className = "btn btn-success w-100";
-            },
-            // حالة الخطأ أو رفض العميل للصلاحية
-            function(error) {
-                console.error(error);
-                statusText.className = "location-status text-danger text-center";
-                if (error.code === error.PERMISSION_DENIED) {
-                    statusText.innerText = "❌ تم رفض إذن الوصول للموقع. يرجى تفعيله من إعدادات الهاتف.";
-                } else {
-                    statusText.innerText = "❌ فشل تحديد الموقع، تأكد من تشغيل الـ GPS وجرب مرة أخرى.";
-                }
-            }, 
-            options
-        );
-    });
-
-    // 2. كود التعامل مع الفورم وإرسال البيانات (هنا هتربطه بالفيربيز Firebase بتاعك)
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const name = document.getElementById('clientName').value;
-        const phone = document.getElementById('clientPhone').value;
-        const details = document.getElementById('orderDetails').value;
-        const lat = document.getElementById('latitude').value;
-        const lng = document.getElementById('longitude').value;
-
-        // تجهيز بيانات الأوردر في كائن (Object)
         const orderData = {
-            clientName: name,
-            clientPhone: phone,
-            orderDetails: details,
-            location: {
-                latitude: lat || "لم يحدد العميل موقعه",
-                longitude: lng || "لم يحدد العميل موقعه"
-            },
-            timestamp: new Date().toISOString()
+            order_id: currentOrderKey,
+            client_name: name,
+            client_phone: phone,
+            order_details: orderDetails,
+            detailed_address: address,
+            location_link: userLocationUrl,
+            status: "pending",
+            timestamp: Date.now()
         };
 
-        console.log("بيانات الطلب الجاهزة للإرسال:", orderData);
+        orderRef.set(orderData).then(() => {
+            alert("تم إرسال أوردرك بنجاح!");
+            document.getElementById('send_btn').disabled = true;
+            document.getElementById('status_div').style.display = "block";
+            document.getElementById('cancel_btn').style.display = "block";
+            listenToOrderStatus();
+        });
+    }
 
-        // ⚠️ هنا يا أسامة هتحط كود الفيربيز بتاعك اللي بيعمل push للـ orderData جوه الـ Database
-        // مثال: firebase.database().ref('orders').push(orderData);
+    function listenToOrderStatus() {
+        database.ref('AlTamim_Orders/' + currentOrderKey).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                document.getElementById('order_status').innerText = data.status === "pending" ? "في انتظار التأكيد..." : "تم تأكيد طلبك وجاري التوصيل! ✅";
+                if(data.status !== "pending") {
+                    document.getElementById('cancel_btn').style.display = "none";
+                    document.getElementById('order_status').style.color = "#28a745";
+                }
+            } else {
+                document.getElementById('order_status').innerText = "تم إلغاء الأوردر أو حذفه.";
+                document.getElementById('cancel_btn').style.display = "none";
+                document.getElementById('order_status').style.color = "#dc3545";
+            }
+        });
+    }
 
-        alert("تم استلام طلبك بنجاح وجاري تحويله للأدمن! شكراً لك.");
-        document.getElementById('orderForm').reset();
-        document.getElementById('locationStatus').innerText = "الموقع لم يحدد بعد";
-        document.getElementById('locationStatus').className = "location-status text-muted text-center";
-        document.getElementById('getLocationBtn').className = "btn btn-outline-secondary w-100";
-    });
+    function cancelOrder() {
+        if(confirm("هل أنت متأكد من إلغاء هذا الأوردر؟")) {
+            database.ref('AlTamim_Orders/' + currentOrderKey).remove().then(() => {
+                alert("تم إلغاء الأوردر بنجاح.");
+                location.reload();
+            });
+        }
+    }
 </script>
-
 </body>
 </html>
+
