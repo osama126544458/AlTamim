@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>آل تميم للتوصيل - طنطا</title>
-    <!-- Bootstrap 5.3 RTL & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -17,12 +16,11 @@
         .form-control, textarea { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #fff; padding: 0.75rem; }
         .form-control:focus, textarea:focus { background: #0f1626; border-color: var(--gold); color: #fff; box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.25); }
         .btn-submit { background: linear-gradient(135deg, var(--gold) 0%, #E4D3A3 100%); border: none; color: #0b0f19; font-weight: 700; width: 100%; padding: 0.75rem; border-radius: 12px; }
-        .whatsapp-btn { position: fixed; bottom: 20px; left: 20px; background: #25D366; color: #fff; border-radius: 50px; padding: 8px 16px; font-weight: 700; text-decoration: none; z-index: 999; box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4); }
+        .whatsapp-btn { position: fixed; bottom: 20px; left: 20px; background: #25D366; color: #fff; border-radius: 50px; padding: 8px 16px; font-weight: 700; text-decoration: none; z-index: 999; }
     </style>
 </head>
 <body>
 
-<!-- زرار الواتساب -->
 <a href="https://wa.me/201281857151" target="_blank" class="whatsapp-btn">
     <i class="bi bi-whatsapp me-1"></i> الدعم الفني
 </a>
@@ -58,12 +56,12 @@
 
                     <div class="mb-3">
                         <label class="form-label">الطلبات المراد توصيلها</label>
-                        <textarea class="form-control" id="orderDetails" required placeholder="اكتب الحاجة اللي عايزنا نشتريها أو نوصلها ومكانها..."></textarea>
+                        <textarea class="form-control" id="orderDetails" required placeholder="اكتب الحاجة اللي عايزنا نشتريها أو نوصلها..."></textarea>
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label">رابط الموقع من الخريطة (اختياري)</label>
-                        <input type="url" class="form-control" id="mapsLink" placeholder="رابط اللوكيشن لو منسوخ">
+                        <label class="form-label">رابط الموقع (اختياري)</label>
+                        <input type="url" class="form-control" id="mapsLink" placeholder="رابط اللوكيشن من جوجل ماب">
                     </div>
 
                     <button type="submit" class="btn-submit">تأكيد وإرسال الطلب</button>
@@ -73,26 +71,19 @@
     </div>
 </div>
 
-<!-- مكتبات الفيربيز الكلاسيكية (أسرع وأضمن في الربط) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getDatabase, ref, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
-<script>
-    // إعدادات الفيربيز الخاصة بمشروعك
     const firebaseConfig = {
         databaseURL: "https://vnom-gym-default-rtdb.firebaseio.com"
     };
-    
-    // بدء تشغيل الفيربيز
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
 
-    // استرجاع البيانات المحفوظة تلقائياً لراحة الزبون
-    if(localStorage.getItem('clientName')) document.getElementById('clientName').value = localStorage.getItem('clientName');
-    if(localStorage.getItem('phoneNumber')) document.getElementById('phoneNumber').value = localStorage.getItem('phoneNumber');
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-    // عند الضغط على إرسال
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
+    // تجهيز الفورم للتعامل مع الرفع
+    document.getElementById('orderForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
         const name = document.getElementById('clientName').value.trim();
@@ -101,34 +92,28 @@
         const details = document.getElementById('orderDetails').value.trim();
         const mapUrl = document.getElementById('mapsLink').value.trim();
 
-        if(!name || !phone || !address || !details) {
-            alert('برجاء ملء الحقول الأساسية أولاً');
-            return;
-        }
+        if(!name || !phone || !address || !details) return;
 
-        // حفظ الاسم والرقم محلياً
-        localStorage.setItem('clientName', name);
-        localStorage.setItem('phoneNumber', phone);
+        // دمج العنوان واللوكيشن اليدوي جوه تفاصيل الطلب عشان يقرأهم الأدمن في الشاشة
+        const finalDetails = `📍 العنوان: ${address}\n📦 الطلب: ${details}\n🔗 ماب: ${mapUrl ? mapUrl : 'غير مرفق'}`;
 
-        // تجميع تفاصيل العنوان مع الطلب في خانة واحدة عشان تظهر في الأدمن بدون مشاكل توافقية
-        const fullDetails = `📍 العنوان: ${address}\n📦 الطلب: ${details}\n🔗 ماب: ${mapUrl ? mapUrl : 'غير مرفق'}`;
-
-        // الأوبجكت اللي الأدمن مستنيه بالظبط
+        // نفس أسماء الحقول اللي الأدمن في السكتشوار مبرمج عليها بالملي
         const orderData = {
             clientName: name,
             phoneNumber: phone,
-            orderDetails: fullDetails,
-            latitude: 30.7865, // إحداثيات ثابتة وسط طنطا عشان الخريطة في الأدمن ما تضربش
+            orderDetails: finalDetails,
+            latitude: 30.7865, 
             longitude: 31.0004,
             accuracy: 10,
             status: 'pending',
-            createdAt: new Date().toISOString()
+            createdAt: Date.now() // إرسال الوقت كـ Timestamp رقمي عشان الأدمن ما يضربش
         };
 
-        // الرفع المباشر في الفيربيز تحت الـ Node المسمى 'orders'
-        database.ref('orders').push(orderData)
-        .then(() => {
-            // نجاح الإرسال
+        try {
+            // الرفع المباشر في قاعدة البيانات في النود "orders"
+            await push(ref(db, 'orders'), orderData);
+            
+            // تفريغ الفورم بعد النجاح
             document.getElementById('clientAddress').value = '';
             document.getElementById('orderDetails').value = '';
             document.getElementById('mapsLink').value = '';
@@ -136,14 +121,14 @@
             const alertBox = document.getElementById('successAlert');
             alertBox.classList.remove('d-none');
             alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
             setTimeout(() => alertBox.classList.add('d-none'), 4000);
-        })
-        .catch((error) => {
-            console.error("Firebase Error:", error);
-            alert("فشل الإرسال! تأكد من إن الـ Rules في الفيربيز عندك مسموح فيها بالكتابة (.write: true)");
-        });
+            
+        } catch (error) {
+            console.error("Firebase Sync Error:", error);
+            alert("حدث خطأ في الشبكة، يمكنك إرسال الطلب عبر زرار الواتساب بالأسفل.");
+        }
     });
 </script>
 </body>
 </html>
+
