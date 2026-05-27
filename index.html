@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>آل تميم - طلب أوردر</title>
     
-    <!-- سكريبتات الفيربيز الخاصة بمشروعك الحالي -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -17,22 +16,24 @@
     <style>
         :root { --gold: #C9A961; --dark-bg: #0b0f19; }
         * { font-family: 'Cairo', sans-serif; }
-        body { background-color: var(--dark-bg); color: #f8f9fa; min-height: 100vh; padding: 1.5rem 0; }
+        body { background-color: var(--dark-bg); color: #f8f9fa; min-height: 100vh; padding: 1rem 0; }
         .glass-card { background: rgba(20, 27, 45, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 1.5rem; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5); }
         .form-control { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #fff; padding: 0.5rem 0.75rem; font-size: 0.9rem; }
         .form-control:focus { background: #0f1626; border-color: var(--gold); color: #fff; box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.25); }
-        .btn-submit { background: linear-gradient(135deg, var(--gold) 0%, #E4D3A3 100%); border: none; color: #0b0f19; font-weight: 700; width: 100%; padding: 0.75rem; border-radius: 12px; }
-        .offer-banner { background: var(--gold); color: #0b0f19; padding: 10px; text-align: center; font-weight: bold; border-radius: 10px; margin-bottom: 15px; display: none; }
-        .status-box { margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; text-align: center; font-weight: bold; }
         
-        /* استايل الجدول */
+        .nav-pills .nav-link { color: #fff; background: rgba(255,255,255,0.05); margin: 3px; border-radius: 10px; font-weight: bold; font-size: 0.9rem; }
+        .nav-pills .nav-link.active { background: linear-gradient(135deg, var(--gold) 0%, #E4D3A3 100%); color: #0b0f19; }
+        
         .table-items { width: 100%; margin-bottom: 10px; }
-        .table-items th { color: var(--gold); font-size: 0.9rem; padding-bottom: 8px; text-align: center; }
-        .table-items td { padding: 4px; vertical-align: middle; }
-        .btn-add-row { background: transparent; border: 1px dashed var(--gold); color: var(--gold); font-size: 0.85rem; padding: 5px 15px; border-radius: 8px; width: 100%; transition: 0.3s; }
-        .btn-add-row:hover { background: rgba(201, 169, 97, 0.1); }
+        .table-items th { color: var(--gold); font-size: 0.85rem; padding-bottom: 8px; text-align: center; }
+        .table-items td { padding: 4px; }
+        .btn-add-row { background: transparent; border: 1px dashed var(--gold); color: var(--gold); font-size: 0.85rem; padding: 5px; border-radius: 8px; width: 100%; }
         .btn-delete-row { background: rgba(220, 53, 69, 0.2); border: 1px solid #dc3545; color: #dc3545; border-radius: 8px; padding: 5px 10px; }
-        .btn-delete-row:hover { background: #dc3545; color: #fff; }
+        
+        .offer-banner { background: var(--gold); color: #0b0f19; padding: 10px; text-align: center; font-weight: bold; border-radius: 10px; margin-bottom: 15px; display: none; }
+        .status-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .history-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+        .btn-submit { background: linear-gradient(135deg, var(--gold) 0%, #E4D3A3 100%); border: none; color: #0b0f19; font-weight: 700; width: 100%; padding: 0.75rem; border-radius: 12px; }
     </style>
 </head>
 <body>
@@ -41,74 +42,97 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             
-            <!-- بنر العروض التلقائي من قاعدة البيانات -->
-            <div id="offer_banner" class="offer-banner"></div>
+            <!-- أزرار التنقل السفلية/العلوية للزبون -->
+            <ul class="nav nav-pills nav-fill mb-3" id="clientTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="order-tab" data-bs-toggle="tab" data-bs-target="#order_page" type="button"><i class="bi bi-cart-plus me-1"></i> طلب أوردر</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status_page" type="button"><i class="bi bi-geo-alt me-1"></i> حالة الطلب</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history_page" type="button"><i class="bi bi-clock-history me-1"></i> السجل</button>
+                </li>
+            </ul>
 
-            <div class="text-center mb-4">
-                <h1 class="fw-bold text-white">آل تميم للتوصيل</h1>
-                <small style="color: var(--gold)">طنطا - داخل طنطا فقط</small>
-            </div>
+            <div class="tab-content" id="clientTabsContent">
+                
+                <!-- الصفحة الأولى: طلب الأوردر والإعلان -->
+                <div class="tab-pane fade show active" id="order_page" role="tabpanel">
+                    <div id="offer_banner" class="offer-banner"></div>
+                    
+                    <div class="glass-card">
+                        <form id="orderForm" onsubmit="event.preventDefault(); sendOrder();">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">اسم العميل:</label>
+                                <input type="text" class="form-control" id="name_input" required placeholder="اكتب اسمك بالكامل">
+                            </div>
 
-            <div class="glass-card">
-                <form id="orderForm" onsubmit="event.preventDefault(); sendOrder();">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">اسم العميل:</label>
-                        <input type="text" class="form-control" id="name_input" required placeholder="اكتب اسمك بالكامل">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">رقم الهاتف:</label>
+                                <input type="tel" class="form-control" id="phone_input" required placeholder="اكتب رقم تليفونك" dir="ltr">
+                            </div>
+
+                            <div class="p-3 mb-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
+                                <label class="form-label fw-bold text-white mb-2"><i class="bi bi-list-stars me-1" style="color:var(--gold)"></i> تفاصيل الطلب (جدول الأصناف):</label>
+                                <table class="table-items">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%;">الصنف</th>
+                                            <th style="width: 25%;">الكمية</th>
+                                            <th style="width: 25%;">ملحوظة</th>
+                                            <th style="width: 10%;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="items_tbody">
+                                        <tr>
+                                            <td><input type="text" class="form-control row-item" required placeholder="مثال: فرخ مشوي"></td>
+                                            <td><input type="text" class="form-control row-qty" required placeholder="وزن / عدد"></td>
+                                            <td><input type="text" class="form-control row-note" placeholder="اختياري"></td>
+                                            <td class="text-center"><button type="button" class="btn-delete-row" onclick="deleteRow(this)"><i class="bi bi-trash3"></i></button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <button type="button" class="btn-add-row" onclick="addNewRow()"><i class="bi bi-plus-circle me-1"></i> إضافة صنف آخر</button>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">العنوان بالتفصيل داخل طنطا:</label>
+                                <input type="text" class="form-control" id="address_input" required placeholder="اسم الشارع - الدور - علامة مميزة">
+                            </div>
+
+                            <button type="submit" id="send_btn" class="btn-submit">🚀 إرسال الطلب للأدمن</button>
+                        </form>
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">رقم الهاتف:</label>
-                        <input type="tel" class="form-control" id="phone_input" required placeholder="اكتب رقم تليفونك" dir="ltr">
+                <!-- الصفحة الثانية: حالة الطلب الحية الحالية -->
+                <div class="tab-pane fade" id="status_page" role="tabpanel">
+                    <div class="glass-card text-center">
+                        <h5 class="fw-bold mb-4 text-white"><i class="bi bi-bell me-2 text-warning"></i>متابعة أوردرك الحالي</h5>
+                        <div id="active_order_status_area">
+                            <p class="text-muted">لا يوجد أوردر نشط حالياً. اذهب لصفحة "طلب أوردر" لعمل طلب جديد.</p>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- جدول تفاصيل الطلب الجديد -->
-                    <div class="p-3 mb-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
-                        <label class="form-label fw-bold text-white mb-2"><i class="bi bi-list-stars me-1" style="color:var(--gold)"></i> تفاصيل الطلب (جدول الأصناف):</label>
-                        
-                        <table class="table-items">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40%;">الصنف</th>
-                                    <th style="width: 25%;">الكمية</th>
-                                    <th style="width: 25%;">ملحوظة</th>
-                                    <th style="width: 10%;"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="items_tbody">
-                                <!-- السطر الأول الافتراضي -->
-                                <tr>
-                                    <td><input type="text" class="form-control row-item" required placeholder="مثال: فرخ مشوي"></td>
-                                    <td><input type="text" class="form-control row-qty" required placeholder="وزن / عدد"></td>
-                                    <td><input type="text" class="form-control row-note" placeholder="اختياري"></td>
-                                    <td class="text-center"><button type="button" class="btn-delete-row" onclick="deleteRow(this)"><i class="bi bi-trash3"></i></button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        
-                        <button type="button" class="btn-add-row" onclick="addNewRow()"><i class="bi bi-plus-circle me-1"></i> إضافة صنف آخر للأوردر</button>
+                <!-- الصفحة الثالثة: سجل الطلبات المتوصلة القديمة -->
+                <div class="tab-pane fade" id="history_page" role="tabpanel">
+                    <div class="glass-card">
+                        <h5 class="fw-bold mb-3 text-white"><i class="bi bi-folder-check me-2 text-success"></i>سجل طلباتك المستلمة سابقاً</h5>
+                        <div id="history_orders_container">
+                            <!-- الطلبات المتوصلة بتنزل هنا محلياً برقم العميل -->
+                        </div>
                     </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">العنوان بالتفصيل داخل طنطا:</label>
-                        <input type="text" class="form-control" id="address_input" required placeholder="اسم الشارع - الدور - علامة مميزة">
-                    </div>
-
-                    <button type="submit" id="send_btn" class="btn-submit">🚀 إرسال الطلب للأدمن</button>
-                </form>
-
-                <!-- صندوق تتبع الحالة للمستهلك -->
-                <div id="status_div" class="status-box" style="display:none;">
-                    حالة الأوردر الحالية: <span id="order_status" style="color: #ffc107;">في انتظار التأكيد...</span>
-                    <button id="cancel_btn" class="btn btn-danger btn-sm w-100 mt-2" style="display:none;" onclick="cancelOrder()">❌ إلغاء الأوردر</button>
                 </div>
 
             </div>
+
         </div>
     </div>
 </div>
 
 <script>
-    // الإعدادات الرسمية لمشروعك (آل تميم)
     const firebaseConfig = {
         apiKey: "AIzaSyCqgpR6RkmGDMKeLZcYpJP43-8W_NePTBg",
         authDomain: "altamim-project.firebaseapp.com",
@@ -123,21 +147,31 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    let currentOrderKey = null;
+    let currentOrderKey = localStorage.getItem('last_order_key');
+    let userPhone = localStorage.getItem('user_phone') || "";
 
-    // جلب بنر العروض حياً
-    database.ref('AlTamim_Offers/current').on('value', (snapshot) => {
-        const offer = snapshot.val();
-        const banner = document.getElementById('offer_banner');
-        if(offer && offer.text) {
-            banner.innerText = "🔥 عرض جديد: " + offer.text;
-            banner.style.display = "block";
-        } else {
-            banner.style.display = "none";
-        }
-    });
+    // استرجاع البيانات المحفوظة لتسهيل التجربة
+    if(localStorage.getItem('user_name')) document.getElementById('name_input').value = localStorage.getItem('user_name');
+    if(userPhone) document.getElementById('phone_input').value = userPhone;
 
-    // وظيفة إضافة سطر جديد للجدول
+    // تشغيل مستمع الإعلانات ومستمع الحالات فورا
+    listenToOffers();
+    if(currentOrderKey) listenToOrderStatus(currentOrderKey);
+    if(userPhone) loadClientHistory(userPhone);
+
+    function listenToOffers() {
+        database.ref('AlTamim_Offers/current').on('value', (snapshot) => {
+            const offer = snapshot.val();
+            const banner = document.getElementById('offer_banner');
+            if(offer && offer.text) {
+                banner.innerText = "🔥 عرض جديد: " + offer.text;
+                banner.style.display = "block";
+            } else {
+                banner.style.display = "none";
+            }
+        });
+    }
+
     function addNewRow() {
         const tbody = document.getElementById('items_tbody');
         const tr = document.createElement('tr');
@@ -150,59 +184,47 @@
         tbody.appendChild(tr);
     }
 
-    // وظيفة مسح سطر من الجدول
     function deleteRow(btn) {
         const tbody = document.getElementById('items_tbody');
-        if(tbody.rows.length > 1) {
-            btn.closest('tr').remove();
-        } else {
-            alert("يجب أن يحتوي الأوردر على صنف واحد على الأقل!");
-        }
+        if(tbody.rows.length > 1) { btn.closest('tr').remove(); }
+        else { alert("يجب أن يحتوي الأوردر على صنف واحد على الأقل!"); }
     }
 
-    // إرسال الطلب للأدمن
     function sendOrder() {
         const name = document.getElementById('name_input').value.trim();
         const phone = document.getElementById('phone_input').value.trim();
         const address = document.getElementById('address_input').value.trim();
         
-        // تجميع بيانات الجدول بالكامل
         const items = document.getElementsByClassName('row-item');
         const qtys = document.getElementsByClassName('row-qty');
         const notes = document.getElementsByClassName('row-note');
         
-        let combinedDetails = "";
-        
+        let combinedData = [];
         for(let i = 0; i < items.length; i++) {
-            let itemText = items[i].value.trim();
-            let qtyText = qtys[i].value.trim();
-            let noteText = notes[i].value.trim();
-            
-            if(itemText && qtyText) {
-                combinedDetails += `🔹 صنف: ${itemText} [كمية: ${qtyText}]`;
-                if(noteText) {
-                    combinedDetails += ` (ملحوظة: ${noteText})`;
-                }
-                if(i < items.length - 1) {
-                    combinedDetails += " \n "; // نزول سطر جديد لكل صنف عشان يظهر منظم عند الأدمن
-                }
+            if(items[i].value.trim()) {
+                // بنحفظها بصيغة كود مشفرة بـ [SPLIT] عشان الأدمن يفكها ويعرضها جدول
+                combinedData.push(`${items[i].value.trim()}[SPLIT]${qtys[i].value.trim()}[SPLIT]${notes[i].value.trim() || 'لا يوجد'}`);
             }
         }
 
-        if(!name || !phone || !combinedDetails || !address) {
-            alert("برجاء ملء جميع الخانات المطلوبة!");
-            return;
+        if(!name || !phone || combinedData.length === 0 || !address) {
+            alert("برجاء ملء البيانات كاملة!"); return;
         }
+
+        // حفظ الداتا محلياً للراحة
+        localStorage.setItem('user_name', name);
+        localStorage.setItem('user_phone', phone);
+        userPhone = phone;
 
         const orderRef = database.ref('AlTamim_Orders').push();
         currentOrderKey = orderRef.key;
+        localStorage.setItem('last_order_key', currentOrderKey);
 
-        // الهيكل المتوافق 100% مع لوحة تحكم الأدمن في السكتشوار
         const orderData = {
             order_id: currentOrderKey,
             client_name: name,
             client_phone: phone,
-            order_details: combinedDetails, 
+            order_details: combinedData.join('[ROW]'), // دمج الصفوف
             detailed_address: address,
             location_link: "", 
             status: "pending",
@@ -210,41 +232,81 @@
         };
 
         orderRef.set(orderData).then(() => {
-            alert("تم إرسال أوردرك بنجاح!");
-            document.getElementById('send_btn').disabled = true;
-            document.getElementById('status_div').style.display = "block";
-            document.getElementById('cancel_btn').style.display = "block";
-            listenToOrderStatus();
+            alert("تم إرسال أوردرك بنجاح! تابع حالته من تبويب (حالة الطلب).");
+            document.getElementById('items_tbody').innerHTML = `<tr><td><input type="text" class="form-control row-item" required placeholder="مثال: فرخ مشوي"></td><td><input type="text" class="form-control row-qty" required placeholder="وزن / عدد"></td><td><input type="text" class="form-control row-note" placeholder="اختياري"></td><td class="text-center"><button type="button" class="btn-delete-row" onclick="deleteRow(this)"><i class="bi bi-trash3"></i></button></td></tr>`;
+            document.getElementById('address_input').value = "";
+            
+            // فتح تبويب الحالة تلقائياً للزبون
+            bootstrap.Tab.getInstance(document.getElementById('status-tab')).show();
+            listenToOrderStatus(currentOrderKey);
+            loadClientHistory(userPhone);
         });
     }
 
-    // الاستماع لتحديثات حالة الطلب من الأدمن
-    function listenToOrderStatus() {
-        database.ref('AlTamim_Orders/' + currentOrderKey).on('value', (snapshot) => {
+    function listenToOrderStatus(key) {
+        const area = document.getElementById('active_order_status_area');
+        database.ref('AlTamim_Orders/' + key).on('value', (snapshot) => {
             const data = snapshot.val();
             if(data) {
-                document.getElementById('order_status').innerText = data.status === "pending" ? "في انتظار التأكيد..." : "تم تأكيد طلبك وجاري التوصيل! ✅";
-                if(data.status !== "pending") {
-                    document.getElementById('cancel_btn').style.display = "none";
-                    document.getElementById('order_status').style.color = "#28a745";
+                let statusText = ""; let statusColor = ""; let statusIcon = "";
+                
+                if(data.status === "pending") {
+                    statusText = "في انتظار تأكيد الأدمن... ⚠️"; statusColor = "#ffc107";
+                    statusIcon = `<div class="spinner-border text-warning my-3" role="status"></div>`;
+                } else if(data.status === "confirmed") {
+                    statusText = "تم تأكيد طلبك وجاري التوصيل الآن! 🚚 ✅"; statusColor = "#28a745";
+                    statusIcon = `<i class="bi bi-truck display-1 d-block my-3 text-success animate-bounce"></i>`;
+                } else if(data.status === "delivered") {
+                    statusText = "تم التوصيل بالسلامة! شكراً لثقتكم. 🎉"; statusColor = "#007bff";
+                    statusIcon = `<i class="bi bi-check2-all display-1 d-block my-3 text-primary"></i>`;
+                    localStorage.removeItem('last_order_key'); // مسحه من الخانة النشطة لأنه راح السجل
                 }
+
+                area.innerHTML = `
+                    <div class="status-box">
+                        ${statusIcon}
+                        <h4 class="fw-bold mt-2" style="color: ${statusColor}">${statusText}</h4>
+                        <p class="text-muted small mt-3">رقم الطلب: ${data.order_id}</p>
+                        ${data.status === 'pending' ? `<button class="btn btn-outline-danger btn-sm mt-2" onclick="cancelOrder('${data.order_id}')">❌ إلغاء الأوردر</button>` : ''}
+                    </div>
+                `;
             } else {
-                document.getElementById('order_status').innerText = "تم إلغاء الأوردر أو حذفه.";
-                document.getElementById('cancel_btn').style.display = "none";
-                document.getElementById('order_status').style.color = "#dc3545";
+                area.innerHTML = `<p class="text-muted">لا يوجد أوردر نشط حالياً أو تم إلغاؤه.</p>`;
             }
         });
     }
 
-    // إلغاء الطلب من طرف العميل
-    function cancelOrder() {
+    function loadClientHistory(phone) {
+        const container = document.getElementById('history_orders_container');
+        database.ref('AlTamim_Orders').orderByChild('client_phone').equalTo(phone).on('value', (snapshot) => {
+            container.innerHTML = "";
+            const orders = snapshot.val();
+            let hasHistory = false;
+            if(orders) {
+                Object.keys(orders).forEach(k => {
+                    if(orders[k].status === 'delivered') {
+                        hasHistory = true;
+                        const dateStr = new Date(orders[k].timestamp).toLocaleDateString('ar-EG');
+                        const div = document.createElement('div');
+                        div.className = "history-item";
+                        div.innerHTML = `<div class="d-flex justify-content-between"><strong>📅 ${dateStr}</strong><span class="text-success fw-bold">واصل ✅</span></div><small class="text-muted d-block mt-1">العنوان: ${orders[k].detailed_address}</small>`;
+                        container.appendChild(div);
+                    }
+                });
+            }
+            if(!hasHistory) container.innerHTML = `<p class="text-muted text-center py-3">لا توجد طلبات سابقة مكتملة في السجل.</p>`;
+        });
+    }
+
+    function cancelOrder(key) {
         if(confirm("هل أنت متأكد من إلغاء هذا الأوردر؟")) {
-            database.ref('AlTamim_Orders/' + currentOrderKey).remove().then(() => {
-                alert("تم إلغاء الأوردر بنجاح.");
-                location.reload();
+            database.ref('AlTamim_Orders/' + key).remove().then(() => {
+                localStorage.removeItem('last_order_key');
+                alert("تم إلغاء الأوردر.");
             });
         }
     }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
