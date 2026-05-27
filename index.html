@@ -124,6 +124,7 @@
     const database = firebase.database();
 
     let currentOrderKey = null;
+    let isArchiving = false; // لمنع حدوث حلقة تكرارية أثناء النقل للسجل
 
     // جلب بنر العروض حياً
     database.ref('AlTamim_Offers/current').on('value', (snapshot) => {
@@ -184,7 +185,7 @@
                     combinedDetails += ` (ملحوظة: ${noteText})`;
                 }
                 if(i < items.length - 1) {
-                    combinedDetails += " \n "; // نزول سطر جديد لكل صنف عشان يظهر منظم عند الأدمن
+                    combinedDetails += " \n "; // نزول سطر جديد لكل صنف
                 }
             }
         }
@@ -196,8 +197,8 @@
 
         const orderRef = database.ref('AlTamim_Orders').push();
         currentOrderKey = orderRef.key;
+        isArchiving = false;
 
-        // الهيكل المتوافق 100% مع لوحة تحكم الأدمن في السكتشوار
         const orderData = {
             order_id: currentOrderKey,
             client_name: name,
@@ -218,20 +219,55 @@
         });
     }
 
-    // الاستماع لتحديثات حالة الطلب من الأدمن
+    // الاستماع لتحديثات حالة الطلب ونقله إلى السجل في حال "تم التوصيل"
     function listenToOrderStatus() {
+        if (!currentOrderKey) return;
+
         database.ref('AlTamim_Orders/' + currentOrderKey).on('value', (snapshot) => {
+            if (isArchiving) return; // حماية لتجنب التكرار أثناء النقل
+
             const data = snapshot.val();
+            const statusText = document.getElementById('order_status');
+            const cancelBtn = document.getElementById('cancel_btn');
+
             if(data) {
-                document.getElementById('order_status').innerText = data.status === "pending" ? "في انتظار التأكيد..." : "تم تأكيد طلبك وجاري التوصيل! ✅";
-                if(data.status !== "pending") {
-                    document.getElementById('cancel_btn').style.display = "none";
-                    document.getElementById('order_status').style.color = "#28a745";
+                // إذا قام الأدمن بتغيير الحالة إلى تم التوصيل (delivered)
+                if (data.status === "delivered") {
+                    isArchiving = true;
+                    statusText.innerText = "تم التوصيل بنجاح! 🎉 (جاري الحفظ في السجل...)";
+                    statusText.style.color = "#17a2b8";
+                    cancelBtn.style.display = "none";
+
+                    // 1. نقل البيانات إلى مسار السجل
+                    database.ref('AlTamim_Archive/' + currentOrderKey).set({
+                        ...data,
+                        archive_timestamp: Date.now()
+                    }).then(() => {
+                        // 2. حذف الأوردر من قائمة الطلبات النشطة بعد نجاح النقل لعدم التكرار
+                        database.ref('AlTamim_Orders/' + currentOrderKey).remove().then(() => {
+                            statusText.innerText = "تم التوصيل ونقل الطلب إلى السجل بنجاح ✅";
+                        });
+                    });
+                } 
+                // إذا تم تأكيد الأوردر (أو أي حالة خلاف معلق وتم التوصيل)
+                else if (data.status !== "pending") {
+                    statusText.innerText = "تم تأكيد طلبك وجاري التوصيل! ✅";
+                    statusText.style.color = "#28a745";
+                    cancelBtn.style.display = "none";
+                } 
+                // إذا كان الأوردر لا يزال معلقاً
+                else {
+                    statusText.innerText = "في انتظار التأكيد... 🟡";
+                    statusText.style.color = "#ffc107";
+                    cancelBtn.style.display = "block";
                 }
             } else {
-                document.getElementById('order_status').innerText = "تم إلغاء الأوردر أو حذفه.";
-                document.getElementById('cancel_btn').style.display = "none";
-                document.getElementById('order_status').style.color = "#dc3545";
+                // إذا لم تكن العملية نقل أرشفة وتم مسح البيانات، فهذا يعني إلغاء الطلب
+                if (!isArchiving) {
+                    statusText.innerText = "تم إلغاء الأوردر أو حذفه.";
+                    cancelBtn.style.display = "none";
+                    statusText.style.color = "#dc3545";
+                }
             }
         });
     }
@@ -247,4 +283,5 @@
     }
 </script>
 </body>
-    </html>
+</html>
+
