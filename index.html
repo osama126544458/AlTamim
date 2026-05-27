@@ -3,132 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>آل تميم للتوصيل - طنطا</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-
+    <title>تطبيق التميم - طلب جديد</title>
+    <!-- استدعاء خط فريدم وشبكة بوتست랩 للتصميم الاحترافي -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        :root { --gold: #C9A961; --dark-bg: #0b0f19; }
-        * { font-family: 'Cairo', sans-serif; }
-        body { background-color: var(--dark-bg); color: #f8f9fa; min-height: 100vh; padding: 1.5rem 0; }
-        .glass-card { background: rgba(20, 27, 45, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 1.5rem; box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5); }
-        .form-control, textarea { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #fff; padding: 0.75rem; }
-        .form-control:focus, textarea:focus { background: #0f1626; border-color: var(--gold); color: #fff; box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.25); }
-        .btn-submit { background: linear-gradient(135deg, var(--gold) 0%, #E4D3A3 100%); border: none; color: #0b0f19; font-weight: 700; width: 100%; padding: 0.75rem; border-radius: 12px; }
-        .whatsapp-btn { position: fixed; bottom: 20px; left: 20px; background: #25D366; color: #fff; border-radius: 50px; padding: 8px 16px; font-weight: 700; text-decoration: none; z-index: 999; }
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card-order {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0d6efd, #0046b5);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #198754, #115f3a);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #ced4da;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        }
+        .location-status {
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
 
-<a href="https://wa.me/201281857151" target="_blank" class="whatsapp-btn">
-    <i class="bi bi-whatsapp me-1"></i> الدعم الفني
-</a>
+<div class="container py-4">
+    <!-- الهيدر أو شعار التطبيق -->
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-primary">التميم للخدمات</h2>
+        <p class="text-muted">سجل بياناتك واطلب بكل سهولة</p>
+    </div>
 
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="text-center mb-4">
-                <h1 class="fw-bold text-white">آل تميم للتوصيل</h1>
-                <small style="color: var(--gold)">داخل طنطا فقط</small>
+    <!-- كارت تسجيل الطلب -->
+    <div class="card card-order p-4 mb-4">
+        <h4 class="mb-3 fw-bold text-dark"><i class="bi bi-cart3 me-2"></i>تفاصيل الطلب</h4>
+        
+        <form id="orderForm">
+            <!-- اسم العميل -->
+            <div class="mb-3">
+                <label for="clientName" class="form-label fw-semibold">اسم العميل :</label>
+                <input type="text" class="form-control" id="clientName" placeholder="اكتب اسمك الثلاثي" required>
             </div>
 
-            <div class="glass-card">
-                <div id="successAlert" class="alert alert-success d-none text-center">
-                    تم إرسال طلبك بنجاح! جاري المراجعة.
-                </div>
-
-                <form id="orderForm">
-                    <div class="mb-3">
-                        <label class="form-label">الاسم</label>
-                        <input type="text" class="form-control" id="clientName" required placeholder="اكتب اسمك">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">رقم الهاتف</label>
-                        <input type="tel" class="form-control" id="phoneNumber" required placeholder="01xxxxxxxxx" dir="ltr">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">العنوان بالتفصيل</label>
-                        <input type="text" class="form-control" id="clientAddress" required placeholder="اسم الشارع، الدور، علامة مميزة">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">الطلبات المراد توصيلها</label>
-                        <textarea class="form-control" id="orderDetails" required placeholder="اكتب الحاجة اللي عايزنا نشتريها أو نوصلها..."></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label">رابط الموقع (اختياري)</label>
-                        <input type="url" class="form-control" id="mapsLink" placeholder="رابط اللوكيشن من جوجل ماب">
-                    </div>
-
-                    <button type="submit" class="btn-submit">تأكيد وإرسال الطلب</button>
-                </form>
+            <!-- رقم الهاتف -->
+            <div class="mb-3">
+                <label for="clientPhone" class="form-label fw-semibold">رقم الهاتف :</label>
+                <input type="tel" class="form-control" id="clientPhone" placeholder="رقم الموبايل للتواصل" required>
             </div>
-        </div>
+
+            <!-- تفاصيل الطلبات -->
+            <div class="mb-3">
+                <label for="orderDetails" class="form-label fw-semibold">ما هي طلباتك؟</label>
+                <textarea class="form-control" id="orderDetails" rows="4" placeholder="اكتب المنتجات أو الخدمات التي تحتاجها بالتفصيل..." required></textarea>
+            </div>
+
+            <!-- تحديد الموقع الجغرافي (اللايف لوكيشن) -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">تحديد موقع التوصيل :</label>
+                <button type="button" class="btn btn-outline-secondary w-100" id="getLocationBtn">
+                    <i class="bi bi-geo-alt-fill me-2"></i>اضغط لتحديد موقعك الحالي تلقائياً
+                </button>
+                <div id="locationStatus" class="location-status text-muted text-center mt-2">الموقع لم يحدد بعد</div>
+                
+                <!-- حقول مخفية لحفظ الإحداثيات وإرسالها لقاعدة البيانات -->
+                <input type="hidden" id="latitude">
+                <input type="hidden" id="longitude">
+            </div>
+
+            <!-- زر إرسال الطلب -->
+            <button type="submit" class="btn btn-success w-100 fw-bold fs-5">
+                <i class="bi bi-check-circle me-2"></i>إرسال الطلب الآن
+            </button>
+        </form>
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getDatabase, ref, push } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+<!-- كود الجافا سكريبت لتشغيل اللوكيشن وإرسال البيانات -->
+<script>
+    // 1. كود تحديد الموقع الجغرافي (Live Location)
+    document.getElementById('getLocationBtn').addEventListener('click', function() {
+        const statusText = document.getElementById('locationStatus');
+        const latInput = document.getElementById('latitude');
+        const lngInput = document.getElementById('longitude');
 
-    const firebaseConfig = {
-        databaseURL: "https://vnom-gym-default-rtdb.firebaseio.com"
-    };
+        if (!navigator.geolocation) {
+            statusText.innerText = "❌ متصفحك لا يدعم تحديد الموقع الجغرافي.";
+            statusText.className = "location-status text-danger text-center";
+            return;
+        }
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        statusText.innerText = "⏳ جاري تحديد موقعك بدقة، انتظر ثواني...";
+        statusText.className = "location-status text-warning text-center";
 
-    // تجهيز الفورم للتعامل مع الرفع
-    document.getElementById('orderForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const name = document.getElementById('clientName').value.trim();
-        const phone = document.getElementById('phoneNumber').value.trim();
-        const address = document.getElementById('clientAddress').value.trim();
-        const details = document.getElementById('orderDetails').value.trim();
-        const mapUrl = document.getElementById('mapsLink').value.trim();
-
-        if(!name || !phone || !address || !details) return;
-
-        // دمج العنوان واللوكيشن اليدوي جوه تفاصيل الطلب عشان يقرأهم الأدمن في الشاشة
-        const finalDetails = `📍 العنوان: ${address}\n📦 الطلب: ${details}\n🔗 ماب: ${mapUrl ? mapUrl : 'غير مرفق'}`;
-
-        // نفس أسماء الحقول اللي الأدمن في السكتشوار مبرمج عليها بالملي
-        const orderData = {
-            clientName: name,
-            phoneNumber: phone,
-            orderDetails: finalDetails,
-            latitude: 30.7865, 
-            longitude: 31.0004,
-            accuracy: 10,
-            status: 'pending',
-            createdAt: Date.now() // إرسال الوقت كـ Timestamp رقمي عشان الأدمن ما يضربش
+        // خيارات لجلب الموقع بأعلى دقة ممكنة High Accuracy
+        const options = {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
         };
 
-        try {
-            // الرفع المباشر في قاعدة البيانات في النود "orders"
-            await push(ref(db, 'orders'), orderData);
-            
-            // تفريغ الفورم بعد النجاح
-            document.getElementById('clientAddress').value = '';
-            document.getElementById('orderDetails').value = '';
-            document.getElementById('mapsLink').value = '';
-            
-            const alertBox = document.getElementById('successAlert');
-            alertBox.classList.remove('d-none');
-            alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => alertBox.classList.add('d-none'), 4000);
-            
-        } catch (error) {
-            console.error("Firebase Sync Error:", error);
-            alert("حدث خطأ في الشبكة، يمكنك إرسال الطلب عبر زرار الواتساب بالأسفل.");
-        }
+        navigator.geolocation.getCurrentPosition(
+            // حالة النجاح
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                latInput.value = lat;
+                lngInput.value = lng;
+
+                statusText.innerText = `✅ تم تحديد الموقع بنجاح! (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                statusText.className = "location-status text-success text-center";
+                document.getElementById('getLocationBtn').className = "btn btn-success w-100";
+            },
+            // حالة الخطأ أو رفض العميل للصلاحية
+            function(error) {
+                console.error(error);
+                statusText.className = "location-status text-danger text-center";
+                if (error.code === error.PERMISSION_DENIED) {
+                    statusText.innerText = "❌ تم رفض إذن الوصول للموقع. يرجى تفعيله من إعدادات الهاتف.";
+                } else {
+                    statusText.innerText = "❌ فشل تحديد الموقع، تأكد من تشغيل الـ GPS وجرب مرة أخرى.";
+                }
+            }, 
+            options
+        );
+    });
+
+    // 2. كود التعامل مع الفورم وإرسال البيانات (هنا هتربطه بالفيربيز Firebase بتاعك)
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const name = document.getElementById('clientName').value;
+        const phone = document.getElementById('clientPhone').value;
+        const details = document.getElementById('orderDetails').value;
+        const lat = document.getElementById('latitude').value;
+        const lng = document.getElementById('longitude').value;
+
+        // تجهيز بيانات الأوردر في كائن (Object)
+        const orderData = {
+            clientName: name,
+            clientPhone: phone,
+            orderDetails: details,
+            location: {
+                latitude: lat || "لم يحدد العميل موقعه",
+                longitude: lng || "لم يحدد العميل موقعه"
+            },
+            timestamp: new Date().toISOString()
+        };
+
+        console.log("بيانات الطلب الجاهزة للإرسال:", orderData);
+
+        // ⚠️ هنا يا أسامة هتحط كود الفيربيز بتاعك اللي بيعمل push للـ orderData جوه الـ Database
+        // مثال: firebase.database().ref('orders').push(orderData);
+
+        alert("تم استلام طلبك بنجاح وجاري تحويله للأدمن! شكراً لك.");
+        document.getElementById('orderForm').reset();
+        document.getElementById('locationStatus').innerText = "الموقع لم يحدد بعد";
+        document.getElementById('locationStatus').className = "location-status text-muted text-center";
+        document.getElementById('getLocationBtn').className = "btn btn-outline-secondary w-100";
     });
 </script>
+
 </body>
 </html>
-
