@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>آل تميم - طلب أوردر</title>
     
-    <!-- سكريبتات الفيربيز الخاصة بمشروعك الحالي -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- Bootstrap 5.3 RTL & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -41,7 +39,6 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             
-            <!-- بنر العروض التلقائي من قاعدة البيانات -->
             <div id="offer_banner" class="offer-banner"></div>
 
             <div class="text-center mb-4">
@@ -61,7 +58,6 @@
                         <input type="tel" class="form-control" id="phone_input" required placeholder="اكتب رقم تليفونك" dir="ltr">
                     </div>
 
-                    <!-- جدول تفاصيل الطلب الجديد -->
                     <div class="p-3 mb-3 rounded" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);">
                         <label class="form-label fw-bold text-white mb-2"><i class="bi bi-list-stars me-1" style="color:var(--gold)"></i> تفاصيل الطلب (جدول الأصناف):</label>
                         
@@ -75,7 +71,6 @@
                                 </tr>
                             </thead>
                             <tbody id="items_tbody">
-                                <!-- السطر الأول الافتراضي -->
                                 <tr>
                                     <td><input type="text" class="form-control row-item" required placeholder="مثال: فرخ مشوي"></td>
                                     <td><input type="text" class="form-control row-qty" required placeholder="وزن / عدد"></td>
@@ -96,10 +91,10 @@
                     <button type="submit" id="send_btn" class="btn-submit">🚀 إرسال الطلب للأدمن</button>
                 </form>
 
-                <!-- صندوق تتبع الحالة للمستهلك -->
                 <div id="status_div" class="status-box" style="display:none;">
                     حالة الأوردر الحالية: <span id="order_status" style="color: #ffc107;">في انتظار التأكيد...</span>
                     <button id="cancel_btn" class="btn btn-danger btn-sm w-100 mt-2" style="display:none;" onclick="cancelOrder()">❌ إلغاء الأوردر</button>
+                    <button id="new_order_btn" class="btn btn-success btn-sm w-100 mt-2" style="display:none;" onclick="startNewOrderForm()">➕ عمل أوردر جديد</button>
                 </div>
 
             </div>
@@ -124,7 +119,19 @@
     const database = firebase.database();
 
     let currentOrderKey = null;
-    let isArchiving = false; // لمنع حدوث حلقة تكرارية أثناء النقل للسجل
+    let isArchiving = false; 
+
+    // عند تحميل الصفحة: التحقق فوراً لو كان فيه أوردر نشط محفوظ في المتصفح
+    window.onload = function() {
+        const savedKey = localStorage.getItem('altamim_active_order_key');
+        if (savedKey) {
+            currentOrderKey = savedKey;
+            // إخفاء الفورم مؤقتاً وإظهار بوكس الحالة مباشرة
+            document.getElementById('orderForm').style.display = "none";
+            document.getElementById('status_div').style.display = "block";
+            listenToOrderStatus();
+        }
+    };
 
     // جلب بنر العروض حياً
     database.ref('AlTamim_Offers/current').on('value', (snapshot) => {
@@ -138,7 +145,6 @@
         }
     });
 
-    // وظيفة إضافة سطر جديد للجدول
     function addNewRow() {
         const tbody = document.getElementById('items_tbody');
         const tr = document.createElement('tr');
@@ -151,7 +157,6 @@
         tbody.appendChild(tr);
     }
 
-    // وظيفة مسح سطر من الجدول
     function deleteRow(btn) {
         const tbody = document.getElementById('items_tbody');
         if(tbody.rows.length > 1) {
@@ -167,7 +172,6 @@
         const phone = document.getElementById('phone_input').value.trim();
         const address = document.getElementById('address_input').value.trim();
         
-        // تجميع بيانات الجدول بالكامل
         const items = document.getElementsByClassName('row-item');
         const qtys = document.getElementsByClassName('row-qty');
         const notes = document.getElementsByClassName('row-note');
@@ -185,7 +189,7 @@
                     combinedDetails += ` (ملحوظة: ${noteText})`;
                 }
                 if(i < items.length - 1) {
-                    combinedDetails += " \n "; // نزول سطر جديد لكل صنف
+                    combinedDetails += " \n "; 
                 }
             }
         }
@@ -211,63 +215,86 @@
         };
 
         orderRef.set(orderData).then(() => {
+            // حفظ الـ Key في المتصفح علشان لو خرج ودخل يفضل يتابعه
+            localStorage.setItem('altamim_active_order_key', currentOrderKey);
+            
             alert("تم إرسال أوردرك بنجاح!");
-            document.getElementById('send_btn').disabled = true;
+            document.getElementById('orderForm').style.display = "none"; // إخفاء الفورم لتوفير مساحة
             document.getElementById('status_div').style.display = "block";
             document.getElementById('cancel_btn').style.display = "block";
             listenToOrderStatus();
         });
     }
 
-    // الاستماع لتحديثات حالة الطلب ونقله إلى السجل في حال "تم التوصيل"
+    // متابعة حالة الأوردر حياً
     function listenToOrderStatus() {
         if (!currentOrderKey) return;
 
+        // هنبحث أولاً في مسار الطلبات النشطة
         database.ref('AlTamim_Orders/' + currentOrderKey).on('value', (snapshot) => {
-            if (isArchiving) return; // حماية لتجنب التكرار أثناء النقل
+            if (isArchiving) return; 
 
             const data = snapshot.val();
             const statusText = document.getElementById('order_status');
             const cancelBtn = document.getElementById('cancel_btn');
+            const newOrderBtn = document.getElementById('new_order_btn');
 
             if(data) {
-                // إذا قام الأدمن بتغيير الحالة إلى تم التوصيل (delivered)
+                // الحالة 1: الأدمن غير الحالة إلى "تم التوصيل" (delivered)
                 if (data.status === "delivered") {
                     isArchiving = true;
-                    statusText.innerText = "تم التوصيل بنجاح! 🎉 (جاري الحفظ في السجل...)";
-                    statusText.style.color = "#17a2b8";
-                    cancelBtn.style.display = "none";
-
-                    // 1. نقل البيانات إلى مسار السجل
+                    statusText.innerText = "جاري حفظ الطلب في السجل... ⏳";
+                    
+                    // نقل البيانات للسجل
                     database.ref('AlTamim_Archive/' + currentOrderKey).set({
                         ...data,
                         archive_timestamp: Date.now()
                     }).then(() => {
-                        // 2. حذف الأوردر من قائمة الطلبات النشطة بعد نجاح النقل لعدم التكرار
+                        // مسحه من قائمة الطلبات النشطة
                         database.ref('AlTamim_Orders/' + currentOrderKey).remove().then(() => {
-                            statusText.innerText = "تم التوصيل ونقل الطلب إلى السجل بنجاح ✅";
+                            // مسح الكي من المتصفح لأن العملية تمت بنجاح
+                            localStorage.removeItem('altamim_active_order_key');
+                            statusText.innerText = "تم التوصيل ونقل الطلب إلى السجل بنجاح ✅ 🎉";
+                            statusText.style.color = "#28a745";
+                            cancelBtn.style.display = "none";
+                            newOrderBtn.style.display = "block"; // إظهار زرار عمل أوردر جديد
                         });
                     });
                 } 
-                // إذا تم تأكيد الأوردر (أو أي حالة خلاف معلق وتم التوصيل)
-                else if (data.status !== "pending") {
-                    statusText.innerText = "تم تأكيد طلبك وجاري التوصيل! ✅";
+                // الحالة 2: تم تأكيد الطلب من الأدمن (confirmed) أو جاري التوصيل
+                else if (data.status === "confirmed" || data.status !== "pending") {
+                    statusText.innerText = "تم تأكيد طلبك وجاري التوصيل الآن! 🛵💨";
                     statusText.style.color = "#28a745";
-                    cancelBtn.style.display = "none";
+                    cancelBtn.style.display = "none"; // العميل ميعرفش يلغيه طالما اتأكد
+                    newOrderBtn.style.display = "none";
                 } 
-                // إذا كان الأوردر لا يزال معلقاً
+                // الحالة 3: الطلب لسه معلق
                 else {
-                    statusText.innerText = "في انتظار التأكيد... 🟡";
+                    statusText.innerText = "في انتظار التأكيد من الإدارة... 🟡";
                     statusText.style.color = "#ffc107";
                     cancelBtn.style.display = "block";
+                    newOrderBtn.style.display = "none";
                 }
             } else {
-                // إذا لم تكن العملية نقل أرشفة وتم مسح البيانات، فهذا يعني إلغاء الطلب
-                if (!isArchiving) {
-                    statusText.innerText = "تم إلغاء الأوردر أو حذفه.";
-                    cancelBtn.style.display = "none";
-                    statusText.style.color = "#dc3545";
-                }
+                // لو البيانات مش موجودة في الـ Orders النشطة، بندور عليها في السجل (الأرشيف)
+                database.ref('AlTamim_Archive/' + currentOrderKey).once('value', (archiveSnapshot) => {
+                    if (archiveSnapshot.exists()) {
+                        localStorage.removeItem('altamim_active_order_key');
+                        statusText.innerText = "هذا الأوردر تم توصيله وموجود بالسجل حالياً ✅";
+                        statusText.style.color = "#17a2b8";
+                        cancelBtn.style.display = "none";
+                        newOrderBtn.style.display = "block";
+                    } else {
+                        // لو مش موجود في السجل ولا الطلبات، يبقي اتلغى أو اتمسح تماماً
+                        if (!isArchiving) {
+                            localStorage.removeItem('altamim_active_order_key');
+                            statusText.innerText = "لم يتم العثور على الأوردر (قد يكون تم إلغاؤه).";
+                            cancelBtn.style.display = "none";
+                            statusText.style.color = "#dc3545";
+                            newOrderBtn.style.display = "block";
+                        }
+                    }
+                });
             }
         });
     }
@@ -276,10 +303,32 @@
     function cancelOrder() {
         if(confirm("هل أنت متأكد من إلغاء هذا الأوردر؟")) {
             database.ref('AlTamim_Orders/' + currentOrderKey).remove().then(() => {
+                localStorage.removeItem('altamim_active_order_key');
                 alert("تم إلغاء الأوردر بنجاح.");
                 location.reload();
             });
         }
+    }
+
+    // دالة تتيح للمستخدم إخفاء صندوق الحالة وفتح استمارة جديدة
+    function startNewOrderForm() {
+        localStorage.removeItem('altamim_active_order_key');
+        currentOrderKey = null;
+        document.getElementById('orderForm').reset();
+        document.getElementById('orderForm').style.display = "block";
+        document.getElementById('status_div').style.display = "none";
+        document.getElementById('send_btn').disabled = false;
+        
+        // إعادة تعيين جدول الأصناف لسطر واحد افتراضي
+        const tbody = document.getElementById('items_tbody');
+        tbody.innerHTML = `
+            <tr>
+                <td><input type="text" class="form-control row-item" required placeholder="مثال: فرخ مشوي"></td>
+                <td><input type="text" class="form-control row-qty" required placeholder="وزن / عدد"></td>
+                <td><input type="text" class="form-control row-note" placeholder="اختياري"></td>
+                <td class="text-center"><button type="button" class="btn-delete-row" onclick="deleteRow(this)"><i class="bi bi-trash3"></i></button></td>
+            </tr>
+        `;
     }
 </script>
 </body>
