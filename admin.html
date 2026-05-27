@@ -24,7 +24,13 @@
         .nav-pills .nav-link.active { background: linear-gradient(135deg, var(--gold) 0%, #E4D3A3 100%); color: #0b0f19; border-color: transparent; }
         
         .admin-card { background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
-        .order-details-box { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 10px 15px; white-space: pre-line; color: #e4d3a3; font-size: 0.95rem; }
+        
+        /* تصميم جدول الأصناف الجديد */
+        .order-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.9rem; text-align: center; }
+        .order-table th { background-color: rgba(201, 169, 97, 0.2); color: var(--gold); border: 1px solid rgba(255,255,255,0.1); padding: 6px; }
+        .order-table td { border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px; color: #fff; vertical-align: middle; }
+        .order-table tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.02); }
+
         .form-control { background: #0f1626; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #fff; padding: 0.75rem; }
         .form-control:focus { background: #0f1626; border-color: var(--gold); color: #fff; box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.25); }
         
@@ -152,6 +158,62 @@
         }
     }
 
+    // دالة ذكية لتحويل النص المكتوب إلى جدول منظم (الصنف | الكمية | الملحوظة)
+    function parseOrderDetailsToTable(detailsText) {
+        if (!detailsText) return `<p class="text-muted small">لا توجد تفاصيل</p>`;
+        
+        // تقسيم النص إلى سطور بناءً على السطر الجديد
+        const lines = detailsText.split('\n');
+        let tableRows = "";
+
+        lines.forEach(line => {
+            if (line.trim() === "") return; // تخطي السطور الفارغة
+
+            let item = line;
+            let qty = "-";
+            let note = "-";
+
+            // محاولة تقسيم السطر إذا كان يحتوي على فواصل مثل (أو - أو : أو ،) لتوزيعها على الأعمدة
+            // يمكنك تخصيص هذا الجزء حسب طريقة إدخال زبائنك للبيانات
+            if (line.includes('-')) {
+                const parts = line.split('-');
+                item = parts[0]?.trim() || line;
+                qty = parts[1]?.trim() || "-";
+                note = parts[2]?.trim() || "-";
+            } else if (line.includes(':')) {
+                const parts = line.split(':');
+                item = parts[0]?.trim() || line;
+                qty = parts[1]?.trim() || "-";
+                note = parts[2]?.trim() || "-";
+            }
+
+            tableRows += `
+                <tr>
+                    <td><b class="text-warning">${item}</b></td>
+                    <td><span class="badge bg-secondary">${qty}</span></td>
+                    <td class="text-white-50 small">${note}</td>
+                </tr>
+            `;
+        });
+
+        return `
+            <div class="table-responsive rounded border border-secondary">
+                <table class="order-table">
+                    <thead>
+                        <tr>
+                            <th>الصنف</th>
+                            <th>الكمية</th>
+                            <th>الملحوظة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
     // =============== [ 2. كود السحب والفرز الحي للأوردرات ] ===============
     database.ref('AlTamim_Orders').on('value', (snapshot) => {
         const allOrders = snapshot.val();
@@ -186,6 +248,9 @@
             // صياغة الوقت
             const timeStr = new Date(order.timestamp).toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}) + " | " + new Date(order.timestamp).toLocaleDateString('ar-EG', {day:'numeric', month:'short'});
             
+            // توليد جدول الأصناف بدلاً من الصندوق القديم
+            const tableHTML = parseOrderDetailsToTable(order.order_details);
+
             // إنشاء كارت الأوردر المتكامل
             const card = document.createElement('div');
             card.className = "col-md-6 col-lg-4";
@@ -198,9 +263,9 @@
                     <h5 class="fw-bold text-white mb-1"><i class="bi bi-person me-1 text-warning"></i>${order.client_name}</h5>
                     <p class="mb-3"><i class="bi bi-telephone me-1 text-success"></i><a href="tel:${order.client_phone}" class="text-success text-decoration-none fw-bold">${order.client_phone}</a></p>
                     
-                    <div class="mb-2">
-                        <label class="text-muted small fw-bold mb-1">📋 تفاصيل الأصناف المكتوبة:</label>
-                        <div class="order-details-box">${order.order_details}</div>
+                    <div class="mb-3">
+                        <label class="text-muted small fw-bold mb-1">📋 الأصناف المطلوبة:</label>
+                        ${tableHTML}
                     </div>
                     <div class="mb-3">
                         <label class="text-muted small fw-bold mb-1">📍 العنوان بالتفصيل:</label>
@@ -215,7 +280,6 @@
             // توجيه الكارت لصفحته المناسبة حسب حالته الفعالة
             if(order.status === 'pending') {
                 newContainer.appendChild(card); countNew++;
-                // تجميع بيانات العميل لو الأوردر مش ملغي
                 buildClientStats(clientStats, order.client_name, order.client_phone);
             } else if(order.status === 'confirmed') {
                 confirmedContainer.appendChild(card); countConfirmed++;
@@ -312,3 +376,4 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
